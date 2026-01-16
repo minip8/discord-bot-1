@@ -23,7 +23,7 @@ class Impostors(commands.Cog):
                 await member.send("You have been selected to play impostor!")
 
         except Forbidden as e:
-            await ctx.send(f"Failed to send a message to {member}! Error: {e}")
+            await ctx.send(f"Failed to send a message to {member.mention}! Error: {e}")
             return
 
         await ctx.send("Successfully sent messages to each member!")
