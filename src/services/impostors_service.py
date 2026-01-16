@@ -34,6 +34,9 @@ class Game:
             member_id for member_id in self._members if member_id not in self._impostors
         ]
 
+        # Determine first to answer
+        self._first_to_play: MemberId = random.choice(self._members)
+
         # Determine the secret word
         self._word: str
         with open(WORDS_PATH) as f:
@@ -66,6 +69,10 @@ class Game:
     @property
     def normals(self) -> list[MemberId]:
         return self._normals
+
+    @property
+    def first_to_play(self) -> MemberId:
+        return self._first_to_play
 
     def check_impostor(self, member_id: MemberId) -> bool:
         return member_id in self.impostors
@@ -142,3 +149,8 @@ class ImpostorsService:
         game = self._get_game(game_id)
 
         return game.get_initial_message(member_id)
+
+    def get_first_to_play(self, game_id: GameId) -> MemberId:
+        game = self._get_game(game_id)
+
+        return game.first_to_play

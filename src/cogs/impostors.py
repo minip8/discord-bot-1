@@ -19,6 +19,8 @@ class Impostors(commands.Cog):
         - animals
         - colours
         - cr (Clash Royale)
+        - minecraft
+        - fnd (Foods & Drinks)
 """,
     )
     async def impostor(
@@ -35,6 +37,7 @@ class Impostors(commands.Cog):
             return
 
         members: list[Member] = list(set(members_))
+        id_to_member = {member.id: member for member in members}
 
         try:
             for member in members:
@@ -66,6 +69,10 @@ class Impostors(commands.Cog):
             await ctx.send(f"Something went wrong!\nError: {e}")
 
         await ctx.send("Successfully sent messages to each member!")
+
+        await ctx.send(
+            f"First to play: {id_to_member[self.service.get_first_to_play(game_id)].mention}"
+        )
 
 
 async def setup(bot: bot.Bot):
