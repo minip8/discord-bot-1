@@ -2,6 +2,7 @@ from discord.ext import commands
 from discord import Intents, Message, Interaction, Member
 from config import TOKEN
 from services.greetings_service import GreetingsService
+from services.impostors_service import ImpostorsService
 
 
 class Bot(commands.Bot):
@@ -11,6 +12,7 @@ class Bot(commands.Bot):
     def __init__(self):
         # Custom services
         self.greetings_service = GreetingsService()
+        self.impostors_service = ImpostorsService()
 
         # Load intents
         intents = Intents.default()
@@ -24,7 +26,11 @@ class Bot(commands.Bot):
 
     # Sync commands
     async def setup_hook(self):
+        # Load extensions
         await self.load_extension("cogs.greetings")
+        await self.load_extension("cogs.impostors")
+
+        # Sync commands
         synced = await self.tree.sync()
         print(f"Synced {synced}!")
 
