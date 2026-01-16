@@ -1,5 +1,5 @@
 from discord.ext import commands
-from discord import Intents, Message, Interaction, Member
+from discord import Intents
 from config import TOKEN
 from services.greetings_service import GreetingsService
 from services.impostors_service import ImpostorsService

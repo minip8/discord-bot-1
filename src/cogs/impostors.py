@@ -1,4 +1,4 @@
-from discord import Message, app_commands, Interaction, Member, Forbidden
+from discord import Member, Forbidden
 from discord.ext import commands
 from core import bot
 
