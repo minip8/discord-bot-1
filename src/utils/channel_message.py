@@ -4,9 +4,9 @@ import asyncio
 from discord import TextChannel
 
 
-async def channel_message(ctx: TextChannel, message: str) -> Exception | None:
+async def channel_message(ctx: TextChannel, message: str, **kwargs) -> Exception | None:
     try:
-        await ctx.send(message)
+        await ctx.send(message, **kwargs)
 
     except Exception as e:
         return e
