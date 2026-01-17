@@ -69,7 +69,7 @@ If you do not receive a message soon, something has gone wrong :(
                 )
             return
 
-        member_ids: list[MemberId] = [member.id for member in members]
+        member_ids: list[MemberId] = list(id_to_member.keys())
         try:
             game_id: GameId = self.service.start_game(
                 member_ids, num_impostors, category
