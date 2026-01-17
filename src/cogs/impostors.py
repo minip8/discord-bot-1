@@ -1,8 +1,11 @@
+import asyncio
+
 from discord import Member, Forbidden
 from discord.ext import commands
 from core import bot
 from custom_types.discord import MemberId
 from custom_types.impostors import GameId
+from utils.direct_message import safe_direct_message
 
 
 class Impostors(commands.Cog):
@@ -39,14 +42,31 @@ class Impostors(commands.Cog):
         members: list[Member] = list(set(members_))
         id_to_member = {member.id: member for member in members}
 
-        try:
-            for member in members:
-                await member.send(
-                    "You have been selected to play impostor! Standby. If you do not receive a message soon, something has gone wrong :("
+        # Attempt to send messages to all members
+        message_results = await asyncio.gather(
+            *(
+                safe_direct_message(
+                    member,
+                    """
+You have been selected to play impostor! Standby. 
+If you do not receive a message soon, something has gone wrong :(
+""",
                 )
+                for member in members
+            )
+        )
 
-        except Forbidden as e:
-            await ctx.send(f"Failed to send a message to {member.mention}!\nError: {e}")
+        # Check for messages that failed to send
+        failed_messages_members = [
+            (member, e) for member, e in zip(members, message_results) if e
+        ]
+
+        # List out all members that failed to receive a message and immediately return
+        if failed_messages_members:
+            for member, e in failed_messages_members:
+                await ctx.send(
+                    f"Failed to send a message to {member.mention}!\nError: {e}"
+                )
             return
 
         member_ids: list[MemberId] = [member.id for member in members]
