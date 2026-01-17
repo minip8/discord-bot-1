@@ -17,6 +17,7 @@ class Game:
         members: list[MemberId],
         num_impostors: int,
         category: str | None,
+        word_bank: dict[str, list[str]],
     ):
         self._game_id = game_id
         self._members = list(set(members))
@@ -39,16 +40,13 @@ class Game:
 
         # Determine the secret word
         self._word: str
-        with open(WORDS_PATH) as f:
-            words: dict[str, list[str]] = json.load(f)
-
         if self._category == "unknown":
-            self._category = random.choice(list(words.keys()))
+            self._category = random.choice(list(word_bank.keys()))
 
-        elif self._category not in words:
+        elif self._category not in word_bank:
             raise AssertionError("Category is not in the word bank.")
 
-        self._word = random.choice(words[self._category])
+        self._word = random.choice(word_bank[self._category])
 
     @property
     def game_id(self) -> GameId:
@@ -95,6 +93,10 @@ class ImpostorsService:
         # self.games[GameId] = Game
         self._games: list[Game] = []
 
+        # Read words
+        with open(WORDS_PATH) as f:
+            self._word_bank: dict[str, list[str]] = json.load(f)
+
     # Getters
     @property
     def games(self) -> list[Game]:
@@ -121,7 +123,7 @@ class ImpostorsService:
         self, members: list[MemberId], num_impostors: int, category: str | None
     ) -> GameId:
         game_id = len(self._games)
-        game = Game(game_id, members, num_impostors, category)
+        game = Game(game_id, members, num_impostors, category, self._word_bank)
         self._games.append(game)
         return game_id
 
