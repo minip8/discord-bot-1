@@ -145,25 +145,38 @@ async def setup(bot: bot.Bot):
 
 
 class GameControlView(View):
+    NUM_BUTTONS = 3
+
     def __init__(self, impostors_cog: Impostors, game_id: GameId):
         super().__init__(timeout=None)
         self._cog = impostors_cog
         self._game_id = game_id
+        self._pressed: set[str] = set()
+
+    def check_done(self):
+        if len(self._pressed) == self.NUM_BUTTONS:
+            self.stop()
 
     @button(label="Begin Poll")
     async def begin_poll(self, interaction: Interaction, button: Button):
         assert type(interaction.channel) is TextChannel
+        self._pressed.add("Begin Poll")
         await interaction.response.defer()
         await self._cog.begin_poll(interaction.channel, self._game_id)
+        self.check_done()
 
     @button(label="Reveal impostors")
     async def reveal_impostors(self, interaction: Interaction, button: Button):
         assert type(interaction.channel) is TextChannel
+        self._pressed.add("Reveal impostors")
         await interaction.response.defer()
         await self._cog.reveal_impostors(interaction.channel, self._game_id)
+        self.check_done()
 
     @button(label="Reveal word")
     async def reveal_word(self, interaction: Interaction, button: Button):
         assert type(interaction.channel) is TextChannel
+        self._pressed.add("Reveal word")
         await interaction.response.defer()
         await self._cog.reveal_word(interaction.channel, self._game_id)
+        self.check_done()
