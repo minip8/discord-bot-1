@@ -1,13 +1,13 @@
 from discord.ext import commands
 from discord import Intents
-from config import TOKEN
+from config import DISCORD_TOKEN
 from services.greetings_service import GreetingsService
 from services.impostors_service import ImpostorsService
 
 
 class Bot(commands.Bot):
     # Token
-    TOKEN = TOKEN
+    DISCORD_TOKEN = DISCORD_TOKEN
 
     def __init__(self):
         # Custom services
@@ -40,4 +40,4 @@ class Bot(commands.Bot):
 
     # Run bot
     def run_(self):
-        super().run(TOKEN)
+        super().run(DISCORD_TOKEN)
