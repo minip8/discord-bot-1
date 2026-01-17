@@ -1,6 +1,6 @@
 import asyncio
 
-from discord import Member, Forbidden
+from discord import Member
 from discord.ext import commands
 from core import bot
 from custom_types.discord import MemberId
