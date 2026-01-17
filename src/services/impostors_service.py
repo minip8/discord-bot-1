@@ -4,7 +4,7 @@ from random import sample
 
 from custom_types.impostors import GameId
 
-from defaults.paths import WORDS_PATH
+from config import WORDS_PATH
 
 from ai.query import query_hint
 
