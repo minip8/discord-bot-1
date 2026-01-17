@@ -138,7 +138,6 @@
     "tombstone",
     "mega-minion"
   ],
-
   "minecraft_mobs" : [ 
     "armadillo",
     "axolotl",
@@ -210,7 +209,6 @@
     "wither skeleton",
     "zombie"
   ],
-
   "minecraft-tools": [
     "flint-and-steel",
     "axe",
@@ -229,9 +227,7 @@
     "bow",
     "shield",
     "crossbow"
-
   ],
-  
   "minecraft": [
     "minecraft:acacia_boat",
     "minecraft:acacia_button",
@@ -1472,8 +1468,7 @@
     "minecraft:zombie_villager_spawn_egg",
     "minecraft:zombified_piglin_spawn_egg"
   ],
-
-  "degrees" :[
+  "degrees": [
     "computer-science",
     "artifical-intelligence",
     "cyber-security",
@@ -2010,11 +2005,8 @@
     "ants",
     "duck",
     "chicken"
-
-
   ],
-
-  "transportation" : [
+  "transportation": [
     "car",
     "truck",
     "bus",
@@ -2040,8 +2032,6 @@
     "tram",
     "fire-truck",
     "drone"
-
-
   ],
   "animals": [
     "dog",
@@ -2092,7 +2082,6 @@
     "crab",
     "cheetah"
   ],
-  
   "sports": [
     "soccer",
     "basketball",
@@ -2164,7 +2153,5 @@
     "pokemon-tcg",
     "clash-royale",
     "gta"
-
-]
-
+  ]
 }
