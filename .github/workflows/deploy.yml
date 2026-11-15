@@ -1,0 +1,43 @@
+name: Deploy
+
+# Redeploys the bot on the VM whenever main changes.
+#
+# The job only "pokes" the VM over SSH: the deploy key is locked to a single
+# script there (/usr/local/bin/discord-bot-deploy), which pulls origin/main,
+# installs dependencies and restarts the discord-bot service. Nothing is
+# copied from the runner, so the VM only ever runs what is on main.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# The job never talks to the GitHub API
+permissions: {}
+
+# Never run two deploys at once; a newer push waits for the current one
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Deploy main to the VM
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          install -m 600 /dev/null ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+          ssh -i ~/.ssh/deploy_key \
+            -o IdentitiesOnly=yes \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            -o ConnectTimeout=20 \
+            "discordbot@$DEPLOY_HOST"

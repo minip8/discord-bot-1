@@ -3,6 +3,7 @@ from discord import Intents
 from config import DISCORD_TOKEN
 from services.greetings_service import GreetingsService
 from services.impostors_service import ImpostorsService
+from services.summary_service import SummaryService
 
 
 class Bot(commands.Bot):
@@ -13,6 +14,7 @@ class Bot(commands.Bot):
         # Custom services
         self.greetings_service = GreetingsService()
         self.impostors_service = ImpostorsService()
+        self.summary_service = SummaryService()
 
         # Load intents
         intents = Intents.default()
@@ -32,6 +34,7 @@ class Bot(commands.Bot):
         # Load extensions
         await self.load_extension("cogs.greetings")
         await self.load_extension("cogs.impostors")
+        await self.load_extension("cogs.summary")
 
         # Sync commands
         synced = await self.tree.sync()
