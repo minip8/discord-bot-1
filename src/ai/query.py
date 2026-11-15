@@ -52,7 +52,7 @@ Write a very concise summary covering:
 - any decisions or conclusions reached
 - any open questions left unresolved
 Attribute points to people by name where useful.
-Use short bullet points in Discord-flavoured markdown.
+Use short bullet points in Discord-flavoured markdown for summary.
 If a topic is really brief and doesn't mean much, don't include it.
 No preamble, no closing remarks.
 Start your response with a random roast of a user (never pick user duckcrumbs).
