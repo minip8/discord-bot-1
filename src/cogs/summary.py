@@ -1,5 +1,3 @@
-import traceback
-
 import discord
 from discord import Message, MessageType, app_commands
 from discord.ext import commands
@@ -46,6 +44,12 @@ class Summary(commands.Cog):
         self.bot = bot
         self.service = bot.summary_service
 
+    async def _send_private(self, interaction: discord.Interaction, content: str):
+        """Send a follow-up only the invoker can see."""
+        await interaction.followup.send(
+            content, ephemeral=True, allowed_mentions=discord.AllowedMentions.none()
+        )
+
     def _is_summarisable(self, message: Message, prefixes: tuple[str, ...]) -> bool:
         if message.author.bot:
             return False
@@ -58,99 +62,80 @@ class Summary(commands.Cog):
             return False
         return True
 
-    # Hybrid: works as both /summarise and !summarise (the alias is prefix-only)
-    @commands.hybrid_command(
-        "summarise",
-        aliases=["summarize"],
-        description="Summarise the previous messages in this channel",
-        help=f"""
-/summarise [count] or !summarise [count]
-    Summarise the previous messages in this channel.
-    count: number of messages to summarise (default {SummaryService.DEFAULT_MESSAGES}, max {SummaryService.MAX_MESSAGES}).
-    Messages from bots, bot commands and messages without text are skipped.
-""",
+    # Slash-only so the reply can be ephemeral (visible only to the invoker)
+    @app_commands.command(
+        name="summarise",
+        description="Summarise the previous messages in this channel (only visible to you)",
     )
     @app_commands.describe(
         count=f"Number of messages to summarise (default {SummaryService.DEFAULT_MESSAGES}, max {SummaryService.MAX_MESSAGES})"
     )
     async def summarise(
         self,
-        ctx: commands.Context,
-        count: commands.Range[
+        interaction: discord.Interaction,
+        count: app_commands.Range[
             int, 1, SummaryService.MAX_MESSAGES
         ] = SummaryService.DEFAULT_MESSAGES,
     ):
-        no_mentions = discord.AllowedMentions.none()
+        # Defer with an ephemeral "thinking…", as the LLM call outlasts
+        # Discord's 3 second response window
+        await interaction.response.defer(ephemeral=True, thinking=True)
+
+        channel = interaction.channel
+        if not isinstance(channel, discord.abc.Messageable):
+            await self._send_private(interaction, "I can't summarise this channel!")
+            return
+
         target = self.service.clamp_count(count)
         scan_limit = min(max(target * FETCH_MULTIPLIER, FETCH_FLOOR), FETCH_CEILING)
 
-        # ctx.prefix is "/" for a slash invocation, so ask the bot for its real
-        # prefixes in order to skip prefixed commands in the history
-        bot_prefixes = await self.bot.get_prefix(ctx.message)
-        prefixes = (
-            (bot_prefixes,) if isinstance(bot_prefixes, str) else tuple(bot_prefixes)
-        )
+        # Skip prefixed commands (e.g. !impostors) in the history
+        prefix = self.bot.command_prefix
+        prefixes = (prefix,) if isinstance(prefix, str) else tuple(prefix)
 
-        # For a slash invocation this defers the interaction (public "thinking…"),
-        # which is required as the LLM call outlasts Discord's 3 second window.
-        # ctx.message is then a placeholder carrying the interaction id, which
-        # still works as the `before` anchor for the history fetch.
-        async with ctx.typing():
-            # Collect newest-first, stopping once enough messages are found
-            collected: list[ChatMessage] = []
-            try:
-                async for message in ctx.channel.history(
-                    limit=scan_limit, before=ctx.message
-                ):
-                    if not self._is_summarisable(message, prefixes):
-                        continue
-                    collected.append(
-                        ChatMessage(
-                            author=message.author.display_name,
-                            content=message.clean_content,
-                            timestamp=message.created_at,
-                        )
+        # Collect newest-first, stopping once enough messages are found.
+        # The interaction id works as a snowflake anchor for the history fetch.
+        collected: list[ChatMessage] = []
+        try:
+            async for message in channel.history(
+                limit=scan_limit, before=discord.Object(id=interaction.id)
+            ):
+                if not self._is_summarisable(message, prefixes):
+                    continue
+                collected.append(
+                    ChatMessage(
+                        author=message.author.display_name,
+                        content=message.clean_content,
+                        timestamp=message.created_at,
                     )
-                    if len(collected) >= target:
-                        break
-            except discord.Forbidden:
-                await ctx.send(
-                    "I don't have permission to read the message history in this channel!",
-                    allowed_mentions=no_mentions,
                 )
-                return
+                if len(collected) >= target:
+                    break
+        except discord.Forbidden:
+            await self._send_private(
+                interaction,
+                "I don't have permission to read the message history in this channel!",
+            )
+            return
 
-            collected.reverse()  # oldest-first for the service
+        collected.reverse()  # oldest-first for the service
 
-            try:
-                summary = await self.service.summarise(collected)
-            except ValueError as e:
-                await ctx.send(str(e), allowed_mentions=no_mentions)
-                return
-            except Exception as e:
-                await ctx.send(
-                    f"Couldn't generate a summary!\nError: {e}",
-                    allowed_mentions=no_mentions,
-                )
-                return
+        try:
+            summary = await self.service.summarise(collected)
+        except ValueError as e:
+            await self._send_private(interaction, str(e))
+            return
+        except Exception as e:
+            await self._send_private(
+                interaction, f"Couldn't generate a summary!\nError: {e}"
+            )
+            return
 
         noun = "message" if len(collected) == 1 else "messages"
         header = f"**Summary of the last {len(collected)} {noun}**"
 
         for chunk in split_message(f"{header}\n{summary}"):
-            await ctx.send(chunk, allowed_mentions=no_mentions)
-
-    async def cog_command_error(self, ctx: commands.Context, error: Exception):
-        if isinstance(error, commands.BadArgument):
-            await ctx.send(
-                f"Invalid count! It must be a number from 1 to {SummaryService.MAX_MESSAGES}.\n"
-                "Usage: /summarise [count] or !summarise [count]",
-                allowed_mentions=discord.AllowedMentions.none(),
-            )
-            return
-
-        # Defining a cog error handler suppresses discord.py's default logging
-        traceback.print_exception(type(error), error, error.__traceback__)
+            await self._send_private(interaction, chunk)
 
 
 async def setup(bot: bot.Bot):
